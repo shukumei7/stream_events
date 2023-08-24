@@ -19,7 +19,7 @@ class SubscriberFactory extends Factory
         return [
             'name'  => fake()->name(),
             'tier'  => rand(1,3),
-            'created_at'=> strtotime('-'.rand(0,90).' days')
+            'created_at'=> random_date()
         ];
     }
 }

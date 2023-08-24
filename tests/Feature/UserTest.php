@@ -16,34 +16,25 @@ class UserTest extends TestCase
 
     // use RefreshDatabase;
 
-    public function test_register(): void
+    public function test_login(): void
     {
 
-        $count = User::count() + 1;
+        $count = 3; // User::count() + 1;
 
         $response = $this->withHeaders([
             'X-Header' => 'Value'
         ])->postJson('api/users', [ 'fb_id' => $count, 'fb_name' => 'Test User '.$count]);
 
-        $this->assertContains($response->getStatusCode(), [200, 201]);
-        $this->assertGreaterThan(299, Follower::where([ 'user_id' => $response['user_id'] ])->count());
-        $this->assertGreaterThan(299, Donation::where([ 'user_id' => $response['user_id'] ])->count());
-        $this->assertGreaterThan(299, Subscriber::where([ 'user_id' => $response['user_id'] ])->count());
-        $this->assertGreaterThan(299, MerchSale::where([ 'user_id' => $response['user_id'] ])->count());
+        $this->assertContains($status = $response->getStatusCode(), [200, 201]);
+        $this->assertGreaterThan(299, $c = Follower::where([ 'user_id' => $response['user_id'] ])->count());
+        $this->assertLessThan(501, $c);
+        $this->assertGreaterThan(299, $c = Donation::where([ 'user_id' => $response['user_id'] ])->count());
+        $this->assertLessThan(501, $c);
+        $this->assertGreaterThan(299, $c = Subscriber::where([ 'user_id' => $response['user_id'] ])->count());
+        $this->assertLessThan(501, $c);
+        $this->assertGreaterThan(299, $c = MerchSale::where([ 'user_id' => $response['user_id'] ])->count());
+        $this->assertLessThan(501, $c);
+        
     }
 
-    public function test_login(): void
-    {
-
-        if(empty($user = User::first())) {
-            $this->assertEmpty($user);
-            return;
-        }
-
-        $response = $this->withHeaders([
-            'X-Header' => 'Value'
-        ])->postJson('api/users', [ 'fb_id' => $user['fb_id'], 'fb_name' => 'Test User 1']);
-
-        $response->assertStatus(200);
-    }
 }

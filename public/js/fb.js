@@ -1,9 +1,9 @@
-const debugFB = false; // window.location.protocol != "https:";
+const debugFB = window.location.protocol != "https:";
 
 var SEFB = {
 	root			: null,
-	fb_version		: 'v15.0',
-    fb_id			: '339346735092648', // 949609642677897', // 812176979992071',
+	fb_version		: 'v17.0',
+    fb_id			: '339346735092648',
     fb_auth			: {},
 	account			: null,
 	isLoggedIn 		: () => {
@@ -36,11 +36,84 @@ var SEFB = {
 				db_id	: 0
 			}
 			console.log('Debug Log In', SEFB.fb_auth.userID);
-			Gallery.login();
+			SEFB.login();
 			return;
 		}
 		FB.getLoginStatus(function(response) {
 			statusChangeCallback(response);
+		});
+	},
+	login		: () => {
+		if(SEFB.fb_auth.db_id) return;
+		let data = {
+			fb_id : SEFB.fb_auth.userID,
+			name  : SEFB.fb_auth.name
+		};
+		SEFB.fb_auth.db_id = $.ajax({
+			url 	: `http://localhost/api/users`,
+			type 	: 'POST',
+			data	: data,
+			success : (res) => {
+				res = JSON.parse(res);
+				console.log('Login', res);
+				return;
+				if(res.data.results == undefined) {
+					return;
+				}
+				if(res.data.results.length == 0) {
+					// ToDo :: create new user
+					console.log('Facebook User not found', SEFB.fb_auth.userID);
+					
+					FB.api(
+					    `/${SEFB.fb_auth.userID}/`, (res) => {
+							if(!res || res.error || !res.name) return false;
+							SEFB.fb_auth.name = res.name;
+							
+							const data = {
+								User : {
+									display_name	: SEFB.fb_auth.name,
+									facebook_id		: SEFB.fb_auth.userID
+								}
+							};
+							
+							$.ajax({
+								url		: `${Gallery.requests.register}.json`,
+								type	: 'POST',
+								data	: data,
+								success	: (res) => {
+									const data = JSON.parse(res);
+									console.log('Registered', data.data.entry_id);
+									SEFB.fb_auth.db_id = data.data.entry_id;
+									for(x in Gallery.comments) {
+										Gallery.comments[x].login();
+									}
+									SEFB.account.changeState();
+								}
+							});
+							
+						}
+					);
+					
+					
+					
+					SEFB.fb_auth.db_id = 0;
+					return;
+				}
+				if(res.data.results.length != 1) {
+					// unknown error
+					SEFB.fb_auth.db_id = 0;
+					return;
+				}
+				SEFB.fb_auth.db_id = res.data.results[0];
+				for(x in Gallery.comments) {
+					Gallery.comments[x].login();
+				}
+				SEFB.account.changeState();
+				console.log('Logged in', SEFB.fb_auth.db_id); 
+			},
+			error : () => {
+				SEFB.fb_auth.db_id = 0;
+			}
 		});
 	}
 }
@@ -74,7 +147,7 @@ function statusChangeCallback(response) {
 	// console.log('FB Status', response);
   	if(response.status == 'connected') {
 		SEFB.fb_auth = response.authResponse;
-		Gallery.login();
+		SEFB.login();
 	}
 }
 

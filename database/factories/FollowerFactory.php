@@ -18,7 +18,7 @@ class FollowerFactory extends Factory
     {
         return [
             'name'  => fake()->name(),
-            'created_at'=> strtotime('-'.rand(0,90).' days')
+            'created_at'=> random_date()
         ];
     }
 }

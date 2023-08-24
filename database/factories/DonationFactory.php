@@ -21,7 +21,7 @@ class DonationFactory extends Factory
             'name'      => fake()->name(),
             'amount'    => rand(1,5) * 100,
             'currency'  => $c[rand(0,1)],
-            'created_at'=> strtotime('-'.rand(0,90).' days')
+            'created_at'=> random_date()
         ];
     }
 }

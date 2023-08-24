@@ -21,7 +21,7 @@ class MerchSaleFactory extends Factory
             'item_name' => fake()->word(),
             'amount'    => rand(1,10),
             'price'     => rand(100,500) / 100,
-            'created_at'=> strtotime('-'.rand(0,90).' days')
+            'created_at'=> random_date()
         ];
     }
 }

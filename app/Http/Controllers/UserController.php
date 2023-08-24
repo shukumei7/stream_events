@@ -13,10 +13,7 @@ class UserController extends Controller
 {
     public function register(Request $request) {
         if($id = User::where(['fb_id' => $request->fb_id])->value('id')) {
-            return response()->json([
-                'message'   => 'User Signed In',
-                'user_id'   => $id
-            ], 200);    
+            return $this->__login($id);            
         }
         $user = new User;
         $user->name = $request->fb_name;
@@ -32,5 +29,12 @@ class UserController extends Controller
             'message'   => 'User Registered',
             'user_id'   => $user->id
         ], 201);
+    }
+
+    private function __login($id) {
+        return response()->json([
+            'message'   => 'User Signed In',
+            'user_id'   => $id
+        ], 200);    
     }
 }
