@@ -10,6 +10,7 @@ use App\Models\Follower;
 use App\Models\Subscriber;
 use App\Models\Donation;
 use App\Models\MerchSale;
+use App\Models\Flag;
 
 class EventTest extends TestCase
 {
@@ -80,6 +81,9 @@ class EventTest extends TestCase
         debug('First ID: '.$first_id);
         $follower_id = Follower::where(['user_id' => $first_id])->get()->value('id');
         debug('Follower ID: '.$follower_id);
+        $response = $this->postJson('api/flags', [ 'user_id' => $first_id, 'table' => 'followers', 'table_id' => $follower_id]);
+        debug($response['message']);
+        $this->assertContains($response->getStatusCode(), [201, 204]);
     }
     
 }

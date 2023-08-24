@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Follower;
 use App\Models\Subscriber;
@@ -79,13 +79,13 @@ class EventController extends Controller
             return $id;
         }
         $tb = 'table';
-        $t_id = 'id';
+        $t_id = 'table_id';
         if(!request()->has($tb) || !request()->has($t_id)) {
             return response()->json(['message' => 'Invalid Input'], 400);
         }
         $tb_class = request()->input($tb);
         $tb_id = request()->input($t_id);
-        if(empty($tb_class::where(['user_id' => $id, 'id' => $tb_id])->count())) {
+        if(empty(DB::table($tb_class)->where(['user_id' => $id, 'id' => $tb_id])->count())) {
             return response()->json(['message' => 'Invalid Input'], 400);
         }
         $flagged = Flag::where($data = ['user_id' => $id, 'table_id' => $tb_id, 'table' => $tb_class ])->value('id');
@@ -93,9 +93,9 @@ class EventController extends Controller
             $flag = Flag::factory()->create($data);
             return response()->json(['message' => 'Marked as read'], 201);
         }
-        debug($flagged);
-        // Flag::where('id', $flagged)->delete();
-        return response()->json(['message' => 'Marked as unread'], 204);
+        // debug($flagged);
+        Flag::where('id', $flagged)->delete();
+        return response()->json(['message' => 'Marked as unread'], 201);
     }
 
     private function __authenticate() {
@@ -104,7 +104,7 @@ class EventController extends Controller
             return response()->json([ 'message' => 'You are not logged in' ], 401);
         }
         if(empty(User::where(['id' => $id = request()->input($u_id) ])->count())) {
-            return response()->json([ 'message' => 'Invalid User ID' ], 400);
+            return response()->json(['message' => 'Invalid User ID' ], 400);
         }
         return $id;
     }
