@@ -9,6 +9,7 @@ use App\Models\Follower;
 use App\Models\Subscriber;
 use App\Models\Donation;
 use App\Models\MerchSale;
+use App\Models\Flag;
 
 class EventController extends Controller
 {
@@ -71,6 +72,30 @@ class EventController extends Controller
         }
         arsort($items);
         return response()->json(['sellers' => array_slice($items, 0, 3)]);
+    }
+
+    public function flag() {
+        if(!is_numeric($id = $this->__authenticate())) {
+            return $id;
+        }
+        $tb = 'table';
+        $t_id = 'id';
+        if(!request()->has($tb) || !request()->has($t_id)) {
+            return response()->json(['message' => 'Invalid Input'], 400);
+        }
+        $tb_class = request()->input($tb);
+        $tb_id = request()->input($t_id);
+        if(empty($tb_class::where(['user_id' => $id, 'id' => $tb_id])->count())) {
+            return response()->json(['message' => 'Invalid Input'], 400);
+        }
+        $flagged = Flag::where($data = ['user_id' => $id, 'table_id' => $tb_id, 'table' => $tb_class ])->value('id');
+        if(empty($flagged)) {
+            $flag = Flag::factory()->create($data);
+            return response()->json(['message' => 'Marked as read'], 201);
+        }
+        debug($flagged);
+        // Flag::where('id', $flagged)->delete();
+        return response()->json(['message' => 'Marked as unread'], 204);
     }
 
     private function __authenticate() {

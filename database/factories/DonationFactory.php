@@ -19,7 +19,7 @@ class DonationFactory extends Factory
         $c = ['USD', 'CAD'];
         return [
             'name'      => fake()->name(),
-            'amount'    => rand(1,5) * 100,
+            'amount'    => rand(1,500),
             'currency'  => $c[rand(0,1)],
             'created_at'=> random_date()
         ];

@@ -24,3 +24,4 @@ Route::get('/events', [EventController::class, 'index']);
 Route::get('/revenues', [EventController::class, 'revenue']);
 Route::get('/followers', [EventController::class, 'followers']);
 Route::get('/sales', [EventController::class, 'sales']);
+Route::post('/flags', [EventController::class, 'flag']);

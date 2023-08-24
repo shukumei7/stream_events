@@ -6,6 +6,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Tests\TestCase;
 use App\Models\User;
+use App\Models\Follower;
+use App\Models\Subscriber;
+use App\Models\Donation;
+use App\Models\MerchSale;
 
 class EventTest extends TestCase
 {
@@ -69,6 +73,13 @@ class EventTest extends TestCase
         debug('Top Sellers');
         debug($response['sellers']);
         $response->assertStatus(200);
+    }
+
+    public function test_flags() {
+        $first_id = User::first()->value('id');
+        debug('First ID: '.$first_id);
+        $follower_id = Follower::where(['user_id' => $first_id])->get()->value('id');
+        debug('Follower ID: '.$follower_id);
     }
     
 }
