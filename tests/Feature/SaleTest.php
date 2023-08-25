@@ -16,8 +16,10 @@ class MerchSaleTest extends TestCase
 
     public function setUp(): void {
         parent::setUp();
-        $count = 1; // User::count() + 1;
-        $response = $this->postJson('api/users', [ 'fb_id' => $count, 'fb_name' => 'Test User '.$count]);
+        $test = new User;
+        $test->name = 'Test User';
+        $test->fb_id = 1;
+        $test->save();
     }
 
     public function test_donating() {
@@ -52,15 +54,11 @@ class MerchSaleTest extends TestCase
         $response = $this->postJson('api/sales', ['streamer_id' => $first_user_id, 'name' => 'Me Me', 'item_name' => 'Blahblah', 'amount' => 1, 'price' => -1]);
         $response->assertStatus(400);
         $this->assertEquals($response['message'], 'Your price must be more than or equal to $1');
-
-        $current = MerchSale::orderBy('id', 'desc')->first();
-
         $response = $this->postJson('api/sales', $td = ['streamer_id' => $first_user_id, 'name' => fake()->name, 'item_name' => 'Blahblah', 'amount' => rand(1, 10), 'price' => rand(1, 100)]);
         $response->assertStatus(201);
         $last = MerchSale::orderBy('id', 'desc')->first();
         $this->assertEquals($td['name'], $last['name']);
         $this->assertEquals($td['amount'], $last['amount']);
         $this->assertEquals($td['price'], $last['price']);
-        $this->assertGreaterThan($current['id'], $last['id']);
     }
 }

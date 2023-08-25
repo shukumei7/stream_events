@@ -2,6 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FollowerController;
+use App\Http\Controllers\DonationsController;
+use App\Http\Controllers\SubscriberController;
+use App\Http\Controllers\SaleController;
+use App\Http\Controllers\EventController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,3 +23,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 Route::get('/users', [UserController::class, 'index']);
+Route::get('/events', [EventController::class, 'index']);
+Route::get('/followers/add', [FollowerController::class, 'add']);
+Route::get('/donations/add', [DonationController::class, 'add']);
+Route::get('/subscribers/add', [SubscriberController::class, 'add']);
+Route::get('/sales/add', [SaleController::class, 'add']);

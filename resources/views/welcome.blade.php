@@ -25,11 +25,14 @@
                 width: 100vh;
                 background: lightgrey;
             }
+            #main > .debug-login {
+                top: 50%;
+                transform: translate(-50%,-50%);
+            }
             .debug-login {
                 position: relative;
-                top: 50%;
                 left: 50%;
-                transform: translate(-50%, -50%);
+                transform: translateX(-50%);
                 width: 200px;
                 background: blue;
                 color: white;
@@ -38,6 +41,43 @@
                 cursor: pointer;
                 border-radius: 5px;
                 text-align: center;
+            }
+            .top-info {
+                display: inline-block;
+                position: relative;
+                width: 33%;
+                height: 100px;
+                vertical-align: top;
+            }
+            .event-info {
+                position: relative;
+                width:100%;
+                height: calc(100vh - 165px);
+                overflow: auto;
+                background: gray;
+            }
+            .event-info > div {
+                border-top: 1px solid black;
+                border-left: 1px solid black;
+                border-right: 1px solid black;
+                padding: 10px 5px 10px 5px;
+                cursor: pointer;
+                color: white;
+                font-weight: bold;
+            }
+            .event-info > div > span {
+                float: right;
+            }
+            .event-info > div.event-read {
+                background: black;
+                color: gray;
+                font-weight: normal;
+            }
+            .event-info > div:hover {
+                background: green;
+            }
+            .event-info > div.event-read:hover {
+                background: darkgreen;
             }
         </style>
     </head>

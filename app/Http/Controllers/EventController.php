@@ -10,6 +10,8 @@ use App\Models\Donation;
 use App\Models\MerchSale;
 use App\Models\Flag;
 
+use Carbon\Carbon;
+
 class EventController extends Controller
 {
     public function index() {
@@ -18,18 +20,19 @@ class EventController extends Controller
         }
         $lt = 'before';
         $at = 'after';
-        $marker = date(DATE_FORMAT);
-        if($has_at = request()->has($at)) $marker = request()->input($at);
-        else if(request()->has($lt)) $marker = request()->input($lt);
-        $updates = array_merge(Follower::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
-            Donation::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
-            Subscriber::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
-            MerchSale::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray());
+        $marker = Carbon::now();
+        if($has_at = request()->has($at)) $marker = Carbon::parse(request()->input($at));
+        else if(request()->has($lt)) $marker = Carbon::parse(request()->input($lt));
+
+        $updates = array_merge(Follower::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray(),
+            Donation::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray(),
+            Subscriber::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray(),
+            MerchSale::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray());
 
         usort($updates, function($a, $b) { 
             if(($at = strtotime($a['created_at'])) == ($bt = strtotime($b['created_at']))) 
-                return $a['id'] > $b['id']; 
-            return $at > $bt;
+                return $a['id'] < $b['id']; 
+            return $at < $bt;
         });
 
         $updates = array_slice($updates, 0, 100);
@@ -44,7 +47,7 @@ class EventController extends Controller
                 $table = 'donations';
             } else if(isset($update['tier'])) { // subscription
                 $message = $update['name'].' subscribed for Tier '.$update['tier'];
-                $table = 'subscriptions';
+                $table = 'subscribers';
             } else { // follower
                 $message = $update['name'].' started following you';
                 $table = 'followers';
@@ -54,10 +57,17 @@ class EventController extends Controller
                 'table'     => $table,
                 'table_id'  => $update['id']
             ])->count();
-            $output []= ['id' => $update['id'], 'time' => $update['created_at']] + compact('message', 'table', 'read');
+            $time = strtotime($update['created_at']);
+            $output []= ['table_id' => $update['id'], 'time' => date(DATE_FORMAT, $time)] + compact('message', 'table', 'read');
         }
 
-        return response()->json([ 'updates' => $output], 200);
+        usort($output, function($a, $b) { 
+            if(($at = strtotime($a['time'])) == ($bt = strtotime($b['time']))) 
+                return $a['table_id'] < $b['table_id']; 
+            return $at < $bt;
+        });
+
+        return response()->json([ 'updates' => array_values($output)], 200);
     }
 
     public function revenue() {
@@ -103,7 +113,7 @@ class EventController extends Controller
             $items[$n] += $a['amount'] * $a['price'];
         }
         arsort($items);
-        return response()->json(['sellers' => array_slice($items, 0, 3)]);
+        return response()->json(['items' => array_slice($items, 0, 3)]);
     }
 
     public function flag() {
@@ -123,11 +133,11 @@ class EventController extends Controller
         $flagged = Flag::where($data = ['user_id' => $id, 'table_id' => $tb_id, 'table' => $tb_class ])->value('id');
         if(empty($flagged)) {
             $flag = Flag::factory()->create($data);
-            return response()->json(['message' => 'Marked as read'], 201);
+            return response()->json(['message' => 'Marked as read', 'flag' => 1], 201);
         }
         // debug($flagged);
         Flag::where('id', $flagged)->delete();
-        return response()->json(['message' => 'Marked as unread'], 201);
+        return response()->json(['message' => 'Marked as unread', 'flag' => 0], 201);
     }
 
     

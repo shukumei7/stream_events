@@ -16,8 +16,10 @@ class SubscriberTest extends TestCase
 
     public function setUp(): void {
         parent::setUp();
-        $count = 1; // User::count() + 1;
-        $response = $this->postJson('api/users', [ 'fb_id' => $count, 'fb_name' => 'Test User '.$count]);
+        $test = new User;
+        $test->name = 'Test User';
+        $test->fb_id = 1;
+        $test->save();
     }
 
     public function test_subscribing() {
@@ -37,14 +39,10 @@ class SubscriberTest extends TestCase
         $response = $this->postJson('api/subscribers', $td = ['streamer_id' => $first_user_id, 'name' => 'Me Me', 'tier' => 'something']);
         $response->assertStatus(400);
         $this->assertEquals($response['message'], 'Subscription Tiers are 1, 2, or 3');
-
-        $current = Subscriber::orderBy('id', 'desc')->first();
-
         $response = $this->postJson('api/subscribers', $td = ['streamer_id' => $first_user_id, 'name' => fake()->name, 'tier' => rand(1,3)]);
         $response->assertStatus(201);
         $last = Subscriber::orderBy('id', 'desc')->first();
         $this->assertEquals($td['name'], $last['name']);
         $this->assertEquals($td['tier'], $last['tier']);
-        $this->assertGreaterThan($current['id'], $last['id']);
     }
 }

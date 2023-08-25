@@ -52,27 +52,35 @@ class EventTest extends TestCase
         $first_id = User::first()->value('id');
         $response = $this->getJson('api/events?user_id='.$first_id);
 
-        $updates = $response['updates'];
-        debug('Count: '.number_format($c = count($updates)));
-        $this->assertLessThan(101, $c);
+        $lf = Follower::where('user_id', $first_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first()->value('created_at');
+        $ld = Donation::where('user_id', $first_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first()->value('created_at');
+        $ls = Subscriber::where('user_id', $first_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first()->value('created_at');
+        $lm = MerchSale::where('user_id', $first_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first()->value('created_at');
 
-        $last = current($updates);
-        $first = end($updates);
-        debug('Latest Time: '.$first['time']);
-        debug('Oldest Time: '.$last['time']);
-        
-        $response = $this->getJson('api/events?user_id='.$first_id.'&before='.$last['time']);
+        $latest_date = max(strtotime($lf), strtotime($ld), strtotime($ls), strtotime($lm));
+
+        $updates = $response['updates'];
+        $this->assertLessThan(101, count($updates));
+        $this->assertEquals(date(DATE_FORMAT, $latest_date), date(DATE_FORMAT, strtotime(current($updates)['time'])));
+        $previous = null;
+        foreach($updates as $update) {
+            if(!$previous) {
+                $previous = $update;
+                continue;
+            }
+            $this->assertLessThanOrEqual(strtotime($previous['time']), strtotime($update['time']));
+            $previous = $update;
+        }
+
+        $response = $this->getJson('api/events?user_id='.$first_id.'&before='.$previous['time']);
         $response->assertStatus(200);
         $updates = $response['updates'];
-        debug('Next Count: '.number_format($c = count($updates)));
-        $this->assertLessThan(101, $c);
+        $this->assertLessThan(101, count($updates));
         
-        $last = current($updates);
-        $this->assertGreaterThanOrEqual(strtotime($last['time']),strtotime($first['time']));
-
-        $first = end($updates);
-        debug('Next Latest Time: '.$first['time']);
-        debug('Next Oldest Time: '.$last['time']);
+        foreach($updates as $update) {
+            $this->assertLessThanOrEqual(strtotime($previous['time']), strtotime($update['time']));
+            $previous = $update;
+        }
 
         $random_past = date(DATE_FORMAT, strtotime('-'.rand(1,10).' days'));
         $response = $this->getJson('api/events?user_id='.$first_id.'&after='.$random_past);
@@ -83,10 +91,18 @@ class EventTest extends TestCase
         $last = current($updates);
         $first = end($updates);
         debug('Count: '.number_format($c = count($updates)));
-        debug('Latest Time: '.$first['time']);
-        debug('Oldest Time: '.$last['time']);
         $this->assertLessThan(101, $c);
-        $this->assertGreaterThanOrEqual(strtotime($random_past),strtotime($last['time']));
+
+        $previous = null;
+        foreach($updates as $update) {
+            $this->assertGreaterThanOrEqual(strtotime($random_past), strtotime($update['time']));
+            if(!$previous) {
+                $previous = $update;
+                continue;
+            }
+            $this->assertLessThanOrEqual(strtotime($previous['time']), strtotime($update['time']));
+            $previous = $update;
+        }
 
         $response = $this->getJson('api/revenues?user_id='.$first_id);
         debug('Revenue: '.number_format($response['revenue'], 2));
@@ -96,7 +112,7 @@ class EventTest extends TestCase
         $response->assertStatus(200);
         $response = $this->getJson('api/sales?user_id='.$first_id);
         debug('Top Sellers');
-        debug($response['sellers']);
+        debug($response['items']);
         $response->assertStatus(200);
     }
 

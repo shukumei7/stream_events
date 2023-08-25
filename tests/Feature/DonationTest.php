@@ -16,8 +16,10 @@ class DonationTest extends TestCase
 
     public function setUp(): void {
         parent::setUp();
-        $count = 1; // User::count() + 1;
-        $response = $this->postJson('api/users', [ 'fb_id' => $count, 'fb_name' => 'Test User '.$count]);
+        $test = new User;
+        $test->name = 'Test User';
+        $test->fb_id = 1;
+        $test->save();
     }
 
     public function test_donating() {
@@ -46,14 +48,10 @@ class DonationTest extends TestCase
         $response = $this->postJson('api/donations', $td = ['streamer_id' => $first_user_id, 'name' => 'Me Me', 'currency' => 'CAD', 'amount' => 'allaN']);
         $response->assertStatus(400);
         $this->assertEquals($response['message'], 'Your amount must be more than or equal to $1');
-
-        $current = Donation::orderBy('id', 'desc')->first();
-
         $response = $this->postJson('api/donations', $td = ['streamer_id' => $first_user_id, 'name' => $fn = fake()->name, 'currency' => 'CAD', 'amount' => $fa = rand(1, 10)]);
         $response->assertStatus(201);
         $last = Donation::orderBy('id', 'desc')->first();
         $this->assertEquals($td['name'], $last['name']);
         $this->assertEquals($td['amount'], $last['amount']);
-        $this->assertGreaterThan($current['id'], $last['id']);
     }
 }

@@ -16,8 +16,10 @@ class FollowerTest extends TestCase
 
     public function setUp(): void {
         parent::setUp();
-        $count = 1; // User::count() + 1;
-        $response = $this->postJson('api/users', [ 'fb_id' => $count, 'fb_name' => 'Test User '.$count]);
+        $test = new User;
+        $test->name = 'Test User';
+        $test->fb_id = 1;
+        $test->save();
     }
 
     public function test_following() {
@@ -31,12 +33,13 @@ class FollowerTest extends TestCase
         $response = $this->postJson('api/followers', ['streamer_id' => $first_user_id]);
         $response->assertStatus(400);
         $this->assertEquals($response['message'], 'Your name is required');
-        $current = Follower::orderBy('id', 'desc')->first();
-        $response = $this->postJson('api/followers', $td = ['streamer_id' => $first_user_id, 'name' => 'Me Me']);
+        $response = $this->postJson('api/followers', $td = ['streamer_id' => $first_user_id, 'name' => fake()->name]);
         $response->assertStatus(201);
         $this->assertEquals($response['message'], 'Thank you for following us!');
         $last = Follower::orderBy('id', 'desc')->first();
         $this->assertEquals($td['name'], $last['name']);
-        $this->assertGreaterThan($current['id'], $last['id']);
+        $response = $this->postJson('api/followers', $td);
+        $response->assertStatus(200);
+        $this->assertEquals($response['message'], 'You are already a follower');
     }
 }

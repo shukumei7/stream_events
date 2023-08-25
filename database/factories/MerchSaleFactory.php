@@ -16,9 +16,10 @@ class MerchSaleFactory extends Factory
      */
     public function definition(): array
     {
+        $items = ['Plushie', 'Shirt', 'Mug', 'Key-chain', 'Magnet'];
         return [
             'name'      => fake()->name(),
-            'item_name' => fake()->word(),
+            'item_name' => $items[rand(0, count($items) - 1)],
             'amount'    => rand(1,10),
             'price'     => rand(100,500) / 100,
             'created_at'=> random_date()

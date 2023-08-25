@@ -1,7 +1,7 @@
 <?php
 
 define('PAGE_SIZE', 100);
-define('DATE_FORMAT', 'Y-m-d\TH:i:s.000000\Z');
+define('DATE_FORMAT', 'Y-m-d H:i:s'); // Y-m-d\TH:i:s.000000\Z');
 
 if(!function_exists('debug')) {
     function debug($data) {

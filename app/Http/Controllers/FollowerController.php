@@ -22,6 +22,10 @@ class FollowerController extends Controller
             return response()->json(['message' => 'Your name is required'], 400);
         }
 
+        if(Follower::where('name', $request->name)->get()->value('id')) {
+            return response()->json(['message' => 'You are already a follower'], 200);
+        }
+
         $r = new Follower;
         $r->user_id = $request->streamer_id;
         $r->name    = $request->name;
