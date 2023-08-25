@@ -20,14 +20,18 @@ class EventController extends Controller
         }
         $lt = 'before';
         $at = 'after';
-        $marker = Carbon::now();
+        $marker = false;
         if($has_at = request()->has($at)) $marker = Carbon::parse(request()->input($at));
         else if(request()->has($lt)) $marker = Carbon::parse(request()->input($lt));
 
-        $updates = array_merge(Follower::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray(),
+        $updates = $marker ? array_merge(Follower::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray(),
             Donation::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray(),
             Subscriber::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray(),
-            MerchSale::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray());
+            MerchSale::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->get()->toArray()) : 
+            array_merge(Follower::where([ 'user_id' => $id ])->get()->toArray(),
+                Donation::where([ 'user_id' => $id ])->get()->toArray(),
+                Subscriber::where([ 'user_id' => $id ])->get()->toArray(),
+                MerchSale::where([ 'user_id' => $id ])->get()->toArray());
 
         usort($updates, function($a, $b) { 
             if(($at = strtotime($a['created_at'])) == ($bt = strtotime($b['created_at']))) 

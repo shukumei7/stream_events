@@ -52,11 +52,11 @@ class EventTest extends TestCase
         $first_id = User::first()->value('id');
         $response = $this->getJson('api/events?user_id='.$first_id);
 
-        $lf = Follower::where('user_id', $first_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first()->value('created_at');
-        $ld = Donation::where('user_id', $first_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first()->value('created_at');
-        $ls = Subscriber::where('user_id', $first_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first()->value('created_at');
-        $lm = MerchSale::where('user_id', $first_id)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->first()->value('created_at');
-
+        $lf = Follower::where('user_id', $first_id)->max('created_at');
+        $ld = Donation::where('user_id', $first_id)->max('created_at');
+        $ls = Subscriber::where('user_id', $first_id)->max('created_at');
+        $lm = MerchSale::where('user_id', $first_id)->max('created_at');
+// dd(compact('lf', 'ld', 'ls', 'lm'));
         $latest_date = max(strtotime($lf), strtotime($ld), strtotime($ls), strtotime($lm));
 
         $updates = $response['updates'];
