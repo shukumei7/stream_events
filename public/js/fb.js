@@ -1,4 +1,4 @@
-const debugFB = false; // window.location.protocol != "https:";
+const debugFB = window.location.protocol != "https:";
 
 var SEFB = {
 	api_url			: `http://localhost/api/`,
@@ -15,11 +15,12 @@ var SEFB = {
 	},
 	button			: () => {
 		if(debugFB) return React.createElement(DebugLogin);
-		const button = React.createElement('div', { key : 'fb-button', className : 'fb-login-button', 'data-size' : 'large', 'data-button-type' : "login_with", 'data-layout' : 'default', 'data-auto-logout-link' : 'true', 'data-use-continue-as' : 'true' });
+		const button = React.createElement('div', { key : 'fb-button', className : 'fb-login-button', 'data-size' : 'large', 'data-button-type' : "login_with", 'data-layout' : 'default', 'data-auto-logout-link' : 'false', 'data-use-continue-as' : 'true' });
+console.log('FB Button', button);
 		clearTimeout(FBParser);
 		FBParser = setTimeout(() => {
 			FB.XFBML.parse();
-		}, 100);
+		}, 1000);
 		return button;
 	},
 	logout			: () => {
@@ -30,7 +31,7 @@ var SEFB = {
 			return;
 		}
 		FB.logout((res) => {
-			// console.log('Log Out', res);
+			console.log('Log Out', res);
 			SEFB.fb_auth.db_id = 0;
 			SEFB.fb_auth = {};
 			SEFB.account.changeState();
@@ -39,6 +40,7 @@ var SEFB = {
 	checkLoginState	: () => {
 		if(debugFB) return;
 		FB.getLoginStatus(function(response) {
+console.log('FB Check Status', response);
 			statusChangeCallback(response);
 		});
 	},
@@ -47,17 +49,30 @@ var SEFB = {
 			console.log('Logged In', SEFB.fb_auth.db_id);
 			return;
 		}
-		console.log('Logging In');
+		if(typeof SEFB.fb_auth.name == 'undefined') {
+			FB.api('/me',
+  				'GET',
+				{"fields":"name"},
+				  function(response) {
+				      // Insert your code here
+					console.log('Get Name', response);
+					SEFB.fb_auth.name = response.name;
+					SEFB.login();
+				  }
+			);
+			return;
+		}
 		let data = {
 			fb_id : SEFB.fb_auth.userID,
 			fb_name  : SEFB.fb_auth.name
 		};
+		console.log('Logging In', data, SEFB.fb_auth);
 		$.ajax({
 			url 	: SEFB.api_url + `users`,
 			type 	: 'POST',
 			data	: data,
 			success : (res) => {
-				// console.log('Login', res);
+				console.log('Login', res);
 				if(!res.user_id) {
 					console.log('Login Failed', res);
 					return;
@@ -82,7 +97,7 @@ window.fbAsyncInit = function() {
     });
       
     FB.AppEvents.logPageView();   
-
+console.log('FB Init');
 	FB.Event.subscribe('auth.login', function(response) {
 		statusChangeCallback(response);
 	});
@@ -99,11 +114,13 @@ window.fbAsyncInit = function() {
 }(document, 'script', 'facebook-jssdk'));
 
 function statusChangeCallback(response) {
-	// console.log('FB Status', response);
+	console.log('FB Status', response);
   	if(response.status == 'connected') {
 		SEFB.fb_auth = response.authResponse;
 		SEFB.login();
+		return;
 	}
+	SEFB.logout();
 }
 
 let FBParser = null;
@@ -122,6 +139,7 @@ class Account extends React.Component {
 		this.setState({logged : SEFB.isLoggedIn()});
 	}
 	render() {
+console.log('Start Account');
 		return SEFB.isLoggedIn() ? React.createElement('div', { className : 'main-container', key : 'container' }, [
 			React.createElement(Revenues, { key : 'revenues' }),
 			React.createElement(Followers, { key : 'followers' }),
