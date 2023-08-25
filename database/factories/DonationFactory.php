@@ -16,12 +16,12 @@ class DonationFactory extends Factory
      */
     public function definition(): array
     {
-        $c = ['USD', 'CAD'];
+        $cy = ['USD', 'CAD'];
         return [
             'name'      => fake()->name(),
             'amount'    => rand(1,500),
-            'currency'  => $c[rand(0,1)],
-            'created_at'=> random_date()
+            'currency'  => $cy[rand(0,1)],
+            'created_at'=> random_date() 
         ];
     }
 }

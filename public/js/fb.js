@@ -1,6 +1,7 @@
 const debugFB = window.location.protocol != "https:";
 
 var SEFB = {
+	api_url			: `http://localhost/api/`,
 	root			: null,
 	fb_version		: 'v17.0',
     fb_id			: '339346735092648',
@@ -13,6 +14,7 @@ var SEFB = {
 		return SEFB.fb_auth.db_id != undefined && !isNaN(SEFB.fb_auth.db_id) ? SEFB.fb_auth.db_id : false;
 	},
 	button			: () => {
+		if(debugFB) return React.createElement(DebugLogin);
 		const button = React.createElement('div', { key : 'fb-button', className : 'fb-login-button', 'data-size' : 'large', 'data-button-type' : "login_with", 'data-layout' : 'default', 'data-auto-logout-link' : 'true', 'data-use-continue-as' : 'true' });
 		clearTimeout(FBParser);
 		FBParser = setTimeout(() => {
@@ -21,95 +23,48 @@ var SEFB = {
 		return button;
 	},
 	logout			: () => {
+		if(debugFB) {
+			SEFB.fb_auth.db_id = 0;
+			SEFB.fb_auth = {};
+			SEFB.account.changeState();
+			return;
+		}
 		FB.logout((res) => {
 			// console.log('Log Out', res);
+			SEFB.fb_auth.db_id = 0;
 			SEFB.fb_auth = {};
 			SEFB.account.changeState();
 		});
 	},
 	checkLoginState	: () => {
-		if(debugFB) {
-			// testing
-			if(!Object.keys(SEFB.fb_auth).length) SEFB.fb_auth = {
-				userID 	: 3,
-				name	: 'User 3',
-				db_id	: 0
-			}
-			console.log('Debug Log In', SEFB.fb_auth.userID);
-			SEFB.login();
-			return;
-		}
+		if(debugFB) return;
 		FB.getLoginStatus(function(response) {
 			statusChangeCallback(response);
 		});
 	},
 	login		: () => {
-		if(SEFB.fb_auth.db_id) return;
+		if(SEFB.fb_auth.db_id) {
+			console.log('Logged In', SEFB.fb_auth.db_id);
+			return;
+		}
+		console.log('Logging In');
 		let data = {
 			fb_id : SEFB.fb_auth.userID,
-			name  : SEFB.fb_auth.name
+			fb_name  : SEFB.fb_auth.name
 		};
-		SEFB.fb_auth.db_id = $.ajax({
-			url 	: `http://localhost/api/users`,
+		$.ajax({
+			url 	: SEFB.api_url + `users`,
 			type 	: 'POST',
 			data	: data,
 			success : (res) => {
-				res = JSON.parse(res);
-				console.log('Login', res);
-				return;
-				if(res.data.results == undefined) {
+				// console.log('Login', res);
+				if(!res.user_id) {
+					console.log('Login Failed', res);
 					return;
 				}
-				if(res.data.results.length == 0) {
-					// ToDo :: create new user
-					console.log('Facebook User not found', SEFB.fb_auth.userID);
-					
-					FB.api(
-					    `/${SEFB.fb_auth.userID}/`, (res) => {
-							if(!res || res.error || !res.name) return false;
-							SEFB.fb_auth.name = res.name;
-							
-							const data = {
-								User : {
-									display_name	: SEFB.fb_auth.name,
-									facebook_id		: SEFB.fb_auth.userID
-								}
-							};
-							
-							$.ajax({
-								url		: `${Gallery.requests.register}.json`,
-								type	: 'POST',
-								data	: data,
-								success	: (res) => {
-									const data = JSON.parse(res);
-									console.log('Registered', data.data.entry_id);
-									SEFB.fb_auth.db_id = data.data.entry_id;
-									for(x in Gallery.comments) {
-										Gallery.comments[x].login();
-									}
-									SEFB.account.changeState();
-								}
-							});
-							
-						}
-					);
-					
-					
-					
-					SEFB.fb_auth.db_id = 0;
-					return;
-				}
-				if(res.data.results.length != 1) {
-					// unknown error
-					SEFB.fb_auth.db_id = 0;
-					return;
-				}
-				SEFB.fb_auth.db_id = res.data.results[0];
-				for(x in Gallery.comments) {
-					Gallery.comments[x].login();
-				}
+				SEFB.fb_auth.db_id = res.user_id;
 				SEFB.account.changeState();
-				console.log('Logged in', SEFB.fb_auth.db_id); 
+				console.log('Login Successful', SEFB.fb_auth.db_id); 
 			},
 			error : () => {
 				SEFB.fb_auth.db_id = 0;
@@ -165,6 +120,92 @@ class Account extends React.Component {
 		this.setState({logged : SEFB.isLoggedIn()});
 	}
 	render() {
-		return SEFB.isLoggedIn() ? React.createElement('div', { className : 'replies-button', onClick : SEFB.logout }, 'Log Out') : '';
+		return SEFB.isLoggedIn() ? React.createElement('div', { className : 'main-container' }, [
+			React.createElement(Revenues),
+			React.createElement(Followers),
+			React.createElement(Sales),
+			React.createElement(Events),
+			React.createElement('div', { className : 'debug-login', onClick : SEFB.logout, 'key' : 'logout' }, 'Log Out')
+		 ]) : SEFB.button();
+	}
+}
+
+class Revenues extends React.Component {
+	constructor(props) {
+		super(props);
+		this.state = {
+			amount : 0
+		};
+	}
+	update() {
+		const obj = this;
+		$.ajax({
+			url	: SEFB.api_url + `revenues?user_id=` + SEFB.fb_auth.db_id,
+			success	: (res) => {
+				console.log('Revenues', res);
+				obj.setState({ amount : res.revenue});
+			}
+		});
+	}
+	componentDidMount() {
+		this.update();
+	}
+	render() {		
+		return React.createElement('div', { className : 'top-info', 'key' : 'revenues'}, 'Revenue: ' + Maho.number(this.state.amount, 2));
+	}
+}
+
+class Followers extends React.Component {
+	render() {
+		$.ajax({
+			url	: SEFB.api_url + `followers?user_id=` + SEFB.fb_auth.db_id,
+			success	: (res) => {
+				console.log('Followers', res);
+			}
+		});
+		return React.createElement('div', { className : 'top-info'}, 'Followers: 0');
+	}
+}
+
+class Sales extends React.Component {
+	render() {
+		$.ajax({
+			url	: SEFB.api_url + `sales?user_id=` + SEFB.fb_auth.db_id,
+			success	: (res) => {
+				console.log('Sales', res);
+			}
+		});
+		return React.createElement('div', { className : 'top-info'}, 'Sales: 0.0');
+	}
+}
+
+class Events extends React.Component {
+	render() {
+		$.ajax({
+			url	: SEFB.api_url + `events?user_id=` + SEFB.fb_auth.db_id,
+			success	: (res) => {
+				console.log('Events', res);
+			}
+		});
+		return React.createElement('div', { className : 'top-info'}, 'Nothing');
+	}
+}
+
+class DebugLogin extends React.Component {
+	constructor(props) {
+		super(props);
+		this.handleClick = this.handleClick.bind(this);
+	}
+	handleClick() {
+		if(!Object.keys(SEFB.fb_auth).length) SEFB.fb_auth = {
+			userID 	: 3,
+			name	: 'User 3',
+			db_id	: 0
+		}
+		console.log('Debug Log In', SEFB.fb_auth.userID);
+		SEFB.login();
+	}
+	render() {
+		return React.createElement('div', { 'className' : 'debug-login', 'onClick' : this.handleClick }, 'Log In');
 	}
 }

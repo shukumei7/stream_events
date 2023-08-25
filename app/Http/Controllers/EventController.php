@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Models\User;
 use App\Models\Follower;
 use App\Models\Subscriber;
 use App\Models\Donation;
@@ -14,22 +13,55 @@ use App\Models\Flag;
 class EventController extends Controller
 {
     public function index() {
-        if(!is_numeric($id = $this->__authenticate())) {
+        if(!is_numeric($id = $this->_authenticate())) {
             return $id;
         }
         $lt = 'before';
-        $last_query = request()->has($lt) ? request()->input($lt) : date(DATE_FORMAT);
-        $updates = array_merge(Follower::where([ 'user_id' => $id ])->whereDate('created_at', '<', $last_query)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
-            Donation::where([ 'user_id' => $id ])->whereDate('created_at', '<', $last_query)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
-            Subscriber::where([ 'user_id' => $id ])->whereDate('created_at', '<', $last_query)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
-            MerchSale::where([ 'user_id' => $id ])->whereDate('created_at', '<', $last_query)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray());
+        $at = 'after';
+        $marker = date(DATE_FORMAT);
+        if($has_at = request()->has($at)) $marker = request()->input($at);
+        else if(request()->has($lt)) $marker = request()->input($lt);
+        $updates = array_merge(Follower::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+            Donation::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+            Subscriber::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+            MerchSale::where([ 'user_id' => $id ])->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->orderBy('id', 'desc')->limit(PAGE_SIZE)->get()->toArray());
 
-        usort($updates, function($a, $b) { if($a['created_at'] == $b['created_at']) return $a['id'] < $b['id']; return $a['created_at'] < $b['created_at']; });
-        return response()->json([ 'updates' => array_slice($updates, 0, 100)], 200);
+        usort($updates, function($a, $b) { 
+            if(($at = strtotime($a['created_at'])) == ($bt = strtotime($b['created_at']))) 
+                return $a['id'] > $b['id']; 
+            return $at > $bt;
+        });
+
+        $updates = array_slice($updates, 0, 100);
+        $output = [];
+        foreach($updates as $update) {
+            $message = $table = '';
+            if(isset($update['item_name'])) { // merch sale
+                $message = $update['name'].' bought '.number_format($update['amount']).' '.$update['item_name'].' for $'.number_format($update['price'], 2);
+                $table = 'merch_sales';
+            } else if(isset($update['currency'])) { // donations
+                $message = $update['name'].' donated '.$update['currency'].'$'.number_format($update['amount']);
+                $table = 'donations';
+            } else if(isset($update['tier'])) { // subscription
+                $message = $update['name'].' subscribed for Tier '.$update['tier'];
+                $table = 'subscriptions';
+            } else { // follower
+                $message = $update['name'].' started following you';
+                $table = 'followers';
+            }
+            $read = Flag::where([
+                'user_id'   => $id, 
+                'table'     => $table,
+                'table_id'  => $update['id']
+            ])->count();
+            $output []= ['id' => $update['id'], 'time' => $update['created_at']] + compact('message', 'table', 'read');
+        }
+
+        return response()->json([ 'updates' => $output], 200);
     }
 
     public function revenue() {
-        if(!is_numeric($id = $this->__authenticate())) {
+        if(!is_numeric($id = $this->_authenticate())) {
             return $id;
         }
         $thirty_days = date(DATE_FORMAT, strtotime('-30 days'));
@@ -51,7 +83,7 @@ class EventController extends Controller
     }
 
     public function followers() {
-        if(!is_numeric($id = $this->__authenticate())) {
+        if(!is_numeric($id = $this->_authenticate())) {
             return $id;
         }
         $thirty_days = date(DATE_FORMAT, strtotime('-30 days'));
@@ -60,7 +92,7 @@ class EventController extends Controller
     }
 
     public function sales() {
-        if(!is_numeric($id = $this->__authenticate())) {
+        if(!is_numeric($id = $this->_authenticate())) {
             return $id;
         }
         $thirty_days = date(DATE_FORMAT, strtotime('-30 days'));
@@ -75,7 +107,7 @@ class EventController extends Controller
     }
 
     public function flag() {
-        if(!is_numeric($id = $this->__authenticate())) {
+        if(!is_numeric($id = $this->_authenticate())) {
             return $id;
         }
         $tb = 'table';
@@ -98,14 +130,5 @@ class EventController extends Controller
         return response()->json(['message' => 'Marked as unread'], 201);
     }
 
-    private function __authenticate() {
-        $u_id = 'user_id';
-        if(!request()->has($u_id)) {
-            return response()->json([ 'message' => 'You are not logged in' ], 401);
-        }
-        if(empty(User::where(['id' => $id = request()->input($u_id) ])->count())) {
-            return response()->json(['message' => 'Invalid User ID' ], 400);
-        }
-        return $id;
-    }
+    
 }
