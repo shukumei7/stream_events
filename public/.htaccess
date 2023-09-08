@@ -4,7 +4,7 @@
     </IfModule>
 
     RewriteEngine On
-
+#RewriteBase / #uncomment if it doesn't work on your local
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

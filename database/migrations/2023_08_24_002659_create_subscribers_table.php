@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('name');
             $table->tinyInteger('tier')->unsigned();
             $table->timestamps();
+            $table->index(['user_id', 'created_at']);
         });
     }
 

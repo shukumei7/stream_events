@@ -19,6 +19,7 @@ return new class extends Migration
             $table->integer('amount')->unsigned();
             $table->decimal('price', 10, 2)->unsigned();
             $table->timestamps();
+            $table->index(['user_id', 'created_at']);
         });
     }
 

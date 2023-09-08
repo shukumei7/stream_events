@@ -11,6 +11,7 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
         <script src="https://unpkg.com/react@18/umd/react.<?php echo $react ?>.js" crossorigin></script>
         <script src="https://unpkg.com/react-dom@18/umd/react-dom.<?php echo $react ?>.js" crossorigin></script>
+        <script async defer crossorigin="anonymous" src="https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v17.0&appId=339346735092648&autoLogAppEvents=1" nonce="sIHGKRPP"></script>
         <script src="{{ asset('/js/maho.js') }}"></script>
         <script src="{{ asset('/js/fb.js') }}"></script>
 
