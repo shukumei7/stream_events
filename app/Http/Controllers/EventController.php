@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-define('PAGE_LIMIT', 100);
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -33,7 +31,7 @@ class EventController extends Controller
             return $at < $bt;
         });
 
-        $updates = array_slice($updates, 0, PAGE_LIMIT);
+        $updates = array_slice($updates, 0, PAGE_SIZE);
 
         return response()->json([ 'updates' => array_values($updates)], 200);
     }
@@ -41,17 +39,17 @@ class EventController extends Controller
     private function __searchEvents($user, $has_at, $marker) {
         if(empty($marker)) {
             return array_merge(
-                $user->followers()->orderBy('created_at', 'desc')->limit(PAGE_LIMIT)->get()->toArray(),
-                $user->donations()->orderBy('created_at', 'desc')->limit(PAGE_LIMIT)->get()->toArray(),
-                $user->subscribers()->orderBy('created_at', 'desc')->limit(PAGE_LIMIT)->get()->toArray(),
-                $user->sales()->orderBy('created_at', 'desc')->limit(PAGE_LIMIT)->get()->toArray()
+                $user->followers()->orderBy('created_at', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+                $user->donations()->orderBy('created_at', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+                $user->subscribers()->orderBy('created_at', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+                $user->sales()->orderBy('created_at', 'desc')->limit(PAGE_SIZE)->get()->toArray()
             );
         }
         return array_merge(
-            $user->followers()->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->limit(PAGE_LIMIT)->get()->toArray(),
-            $user->donations()->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->limit(PAGE_LIMIT)->get()->toArray(),
-            $user->subscribers()->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->limit(PAGE_LIMIT)->get()->toArray(),
-            $user->sales()->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->limit(PAGE_LIMIT)->get()->toArray()
+            $user->followers()->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+            $user->donations()->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+            $user->subscribers()->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->limit(PAGE_SIZE)->get()->toArray(),
+            $user->sales()->whereDate('created_at', $has_at ? '>' : '<', $marker)->orderBy('created_at', 'desc')->limit(PAGE_SIZE)->get()->toArray()
         );
     }
 
@@ -104,12 +102,12 @@ class EventController extends Controller
         }
         $tb_class = request()->input($tb);
         $tb_id = request()->input($t_id);
-        if(empty(DB::table($tb_class)->where(['user_id' => $id, 'id' => $tb_id])->count())) {
+        if(empty(DB::table($tb_class)->where(['user_id' => $user->id, 'id' => $tb_id])->count())) {
             return response()->json(['message' => 'Invalid Input'], 400);
         }
         $flagged = $user->flags()->where($data = ['table_id' => $tb_id, 'table' => $tb_class ])->value('id');
         if(empty($flagged)) {
-            $flag = Flag::factory()->create($data);
+            $flag = Flag::factory()->create($data + ['user_id' => $user->id]);
             return response()->json(['message' => 'Marked as read', 'flag' => 1], 201);
         }
         // debug($flagged);
