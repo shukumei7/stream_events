@@ -18,7 +18,8 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'fb_id'     => Str::random(10),
+            'fb_token'  => Str::random(10) 
         ];
     }
 

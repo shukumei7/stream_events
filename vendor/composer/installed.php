@@ -5,7 +5,7 @@
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
-        'reference' => '84df3cd8d1584404a0880582970054522fee6b35',
+        'reference' => '243340cec64a7c22e148190505b959017a00d6a9',
         'name' => 'laravel/laravel',
         'dev' => true,
     ),
@@ -376,7 +376,7 @@
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
-            'reference' => '84df3cd8d1584404a0880582970054522fee6b35',
+            'reference' => '243340cec64a7c22e148190505b959017a00d6a9',
             'dev_requirement' => false,
         ),
         'laravel/pint' => array(
@@ -425,12 +425,12 @@
             'dev_requirement' => false,
         ),
         'laravel/socialite' => array(
-            'pretty_version' => 'v5.8.1',
-            'version' => '5.8.1.0',
+            'pretty_version' => 'v5.9.0',
+            'version' => '5.9.0.0',
             'type' => 'library',
             'install_path' => __DIR__ . '/../laravel/socialite',
             'aliases' => array(),
-            'reference' => '9989b4530331597fae811bca240bf4e8f15e804b',
+            'reference' => '14acfa3262875f180fba51efe3c7aaa089a9ef24',
             'dev_requirement' => false,
         ),
         'laravel/tinker' => array(

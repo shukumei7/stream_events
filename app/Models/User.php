@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Follower;
+use App\Models\Subscriber;
+use App\Models\Donation;
+use App\Models\MerchSale;
+use App\Models\Flag;
 
 class User extends Authenticatable
 {
@@ -20,6 +25,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'fb_id',
+        'fb_token',
         'password',
     ];
 
@@ -42,4 +48,29 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function followers(): HasMany 
+    {
+        return $this->hasMany(Follower::class);
+    }
+
+    public function subscribers(): HasMany 
+    {
+        return $this->hasMany(Subscriber::class);
+    }
+
+    public function donations(): HasMany 
+    {
+        return $this->hasMany(Donation::class);
+    }
+
+    public function sales(): HasMany 
+    {
+        return $this->hasMany(MerchSale::class);
+    }
+
+    public function flags(): HasMany 
+    {
+        return $this->hasMany(Flag::class);
+    }
 }

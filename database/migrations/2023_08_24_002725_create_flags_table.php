@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('table');
             $table->foreignId('table_id');
             $table->timestamps();
+            $table->index(['user_id', 'table', 'table_id']);
         });
     }
 

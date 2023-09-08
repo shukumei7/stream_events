@@ -15,8 +15,8 @@ use App\Models\MerchSale;
 class UserTest extends TestCase
 {
 
-    // use RefreshDatabase;
-    use DatabaseMigrations;
+    use RefreshDatabase;
+    // use DatabaseMigrations;
 
     public function test_bad_registration(): void
     {
@@ -32,8 +32,9 @@ class UserTest extends TestCase
     public function test_login(): void
     {
         $count = 3; // User::count() + 1;
-        $response = $this->postJson('api/users', [ 'fb_id' => $count, 'fb_name' => 'Test User '.$count]);
+        $response = $this->postJson('api/users', [ 'fb_id' => $count, 'fb_name' => 'Test User '.$count, 'fb_token' => 'Random Token']);
         $this->assertContains($status = $response->getStatusCode(), [200, 201]);
+        $this->assertTrue(!empty($response['token']));
         $this->assertGreaterThan(299, $c = Follower::where([ 'user_id' => $response['user_id'] ])->count());
         $this->assertLessThan(501, $c);
         $this->assertGreaterThan(299, $c = Donation::where([ 'user_id' => $response['user_id'] ])->count());
@@ -42,6 +43,8 @@ class UserTest extends TestCase
         $this->assertLessThan(501, $c);
         $this->assertGreaterThan(299, $c = MerchSale::where([ 'user_id' => $response['user_id'] ])->count());
         $this->assertLessThan(501, $c);
+        $response = $this->actingAs(User::find($response['user_id']))->get('/api/users');
+        $response->assertOk();
         
     }
 

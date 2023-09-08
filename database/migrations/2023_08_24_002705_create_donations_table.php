@@ -18,6 +18,7 @@ return new class extends Migration
             $table->decimal('amount', 10, 2)->unsigned();
             $table->enum('currency', ['USD', 'CAD']);
             $table->timestamps();
+            $table->index(['user_id', 'created_at']);
         });
     }
 

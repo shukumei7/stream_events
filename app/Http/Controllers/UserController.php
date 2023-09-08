@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Follower;
@@ -20,12 +21,17 @@ class UserController extends Controller
         exit;
     }
 
+    public function view() {
+        $user = Auth::user();
+        return response()->json(['message' => 'You are logged in']);
+    }
+
     public function register(Request $request) {
         if(empty($request->fb_id)) {
             return response()->json(['message' => 'No ID specified'], 400);
         }
-        if($id = User::where(['fb_id' => $request->fb_id])->value('id')) {
-            return $this->__login($id);            
+        if(!empty($login = $this->__login($request->fb_id, $request->fb_token))) {
+            return $login;            
         }
         if(empty($request->fb_name)) {
             return response()->json(['message' => 'No name specified'], 400);
@@ -34,6 +40,7 @@ class UserController extends Controller
         $user = new User;
         $user->name = $request->fb_name;
         $user->fb_id = $request->fb_id;
+        $user->fb_token = $request->fb_token;
         $user->save();
         
         Follower::factory()->count(rand(300,500))->create([
@@ -49,10 +56,7 @@ class UserController extends Controller
             'user_id' => $user->id
         ]);
 
-        return response()->json([
-            'message'   => 'User Registered',
-            'user_id'   => $user->id
-        ], 201);
+        return $this->__login($user->fb_id, $user->fb_token);
     }
 
     public function env() {
@@ -64,10 +68,15 @@ class UserController extends Controller
         ], 200);
     }
 
-    private function __login($id) {
+    private function __login($fb_id, $fb_token) {
+        if(empty($user = User::where('fb_id', $fb_id)->where('fb_token', $fb_token)->first())) {
+            return false;
+        }
+        Auth::login($user, true);
         return response()->json([
             'message'   => 'User Signed In',
-            'user_id'   => $id
-        ], 200);    
+            'user_id'   => $user->id,
+            'token'     => $user->createToken(env('APP_NAME', 'Steam Events'))->plainTextToken,
+        ], 200);
     }
 }
