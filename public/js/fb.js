@@ -73,7 +73,7 @@ console.log('FB Button', button);
 			return;
 		}
 		let data = {
-			fb_token 	: SEFB.fb_auth.access_token
+			fb_token 	: SEFB.fb_auth.accessToken
 		};
 		console.log('Logging In', data, SEFB.fb_auth);
 		$.ajax({
