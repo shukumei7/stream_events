@@ -14,6 +14,7 @@ use App\Models\Subscriber;
 use App\Models\Donation;
 use App\Models\MerchSale;
 use App\Models\Flag;
+use App\Models\Social;
 
 class User extends Authenticatable
 {
@@ -26,8 +27,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
-        'fb_id',
-        'fb_token',
+        'email',
         'password',
     ];
 
@@ -75,4 +75,5 @@ class User extends Authenticatable
     {
         return $this->hasMany(Flag::class);
     }
+
 }
