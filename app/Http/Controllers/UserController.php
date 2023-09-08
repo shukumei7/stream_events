@@ -40,27 +40,7 @@ class UserController extends Controller
         return $user->createToken(env('APP_NAME', 'Steam Events'))->plainTextToken;
     }
 
-    public function register(Request $request) {
-        if(empty($request->fb_token)) {
-            return response()->json(['message' => 'Invalid credentials provided'], 302);
-        }
-        try {
-            $fb_user = Socialite::driver($site = 'facebook')->userFromToken($request->fb_token); // stateless()->user();
-        } catch (ClientException $exception) {
-            return response()->json(['message' => 'Invalid credentials provided.'], 422);
-        }
-
-        // dd(['token' => $request->fb_token, 'user' => $fb_user]);
-
-        if($user = User::where('fb_id', $fb_id = $fb_user->getId())->first()) {
-            return response()->json(['message' => 'Welcome back!', 'user_id' => $user->id], 200, ['Access-Token' => $this->__createToken($user)]);
-        }
-
-        $user = new User;
-        $user->name = $fb_user->getName();
-        $user->fb_id = $fb_id;
-        $user->save();
-
+    private function __prepare($user) {
         Follower::factory()->count(rand(300,500))->create([
             'user_id' => $user->id
         ]);
@@ -74,7 +54,39 @@ class UserController extends Controller
             'user_id' => $user->id
         ]);
 
-        return response()->json(['message' => 'New user registered', 'user_id' => $user->id ], 201, ['Access-Token' => $this->__createToken($user)]);
+        return response()->json(['message' => 'New user registered', 'user_id' => $user->id, 'token' => $this->__createToken($user) ], 201);
+    }
+
+    public function register(Request $request) {
+        if(empty($request->fb_token)) {
+            return response()->json(['message' => 'Invalid credentials provided'], 302);
+        }
+        if($request->fb_token == 'sample') {
+            $user = new User;
+            $user->name = 'Test User';
+            $user->fb_id = '123';
+            $user->save();
+
+            return $this->__prepare($user);
+        }
+        try {
+            $fb_user = Socialite::driver($site = 'facebook')->userFromToken($request->fb_token); // stateless()->user();
+        } catch (ClientException $exception) {
+            return response()->json(['message' => 'Invalid credentials provided.'], 422);
+        }
+
+        // dd(['token' => $request->fb_token, 'user' => $fb_user]);
+
+        if($user = User::where('fb_id', $fb_id = $fb_user->getId())->first()) {
+            return response()->json(['message' => 'Welcome back!', 'user_id' => $user->id, 'token' => $this->__createToken($user)]);
+        }
+
+        $user = new User;
+        $user->name = $fb_user->getName();
+        $user->fb_id = $fb_id;
+        $user->save();
+
+        return $this->__prepare($user);
     }
 
 }

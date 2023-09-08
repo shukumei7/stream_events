@@ -6,6 +6,7 @@ var SEFB = {
 	fb_version		: 'v17.0',
     fb_id			: '339346735092648',
     fb_auth			: {},
+	api_token		: null,
 	account			: null,
 	isLoggedIn 		: () => {
 		return SEFB.fb_auth.userID != undefined && !isNaN(SEFB.fb_auth.userID) ? SEFB.fb_auth.userID : false;
@@ -42,6 +43,12 @@ var SEFB = {
 			statusChangeCallback(response);
 		});
 	},
+	headers		: () => {
+		return {
+			Accept          : 'application/json',
+			Authorization   : 'Bearer ' + SEFB.api_token
+		};
+	},
 	login		: () => {
 		if(SEFB.fb_auth.db_id) {
 			console.log('Logged In', SEFB.fb_auth.db_id);
@@ -61,8 +68,7 @@ var SEFB = {
 			return;
 		}
 		let data = {
-			fb_id 	: SEFB.fb_auth.userID,
-			fb_name  : SEFB.fb_auth.name
+			fb_token 	: SEFB.fb_auth.access_token
 		};
 		console.log('Logging In', data);
 		$.ajax({
@@ -70,16 +76,18 @@ var SEFB = {
 			type 	: 'POST',
 			data	: data,
 			success : (res) => {
-				// console.log('Login', res);
+				console.log('Login', res);
 				if(!res.user_id) {
 					console.log('Login Failed', res);
 					return;
 				}
 				SEFB.fb_auth.db_id = res.user_id;
+				SEFB.api_token = res.token;
 				SEFB.account.changeState();
 				console.log('Login Successful', SEFB.fb_auth.db_id); 
 			},
-			error : () => {
+			error : (xhr) => {
+				console.log('Error', xhr)
 				SEFB.fb_auth.db_id = 0;
 			}
 		});
@@ -159,7 +167,8 @@ class Revenues extends React.Component {
 		if(!SEFB.fb_auth.db_id) return;
 		const obj = this;
 		$.ajax({
-			url	: SEFB.api_url + `revenues?user_id=` + SEFB.fb_auth.db_id,
+			url		: SEFB.api_url + `revenues`,
+			headers	: SEFB.headers(),
 			success	: (res) => {
 				// console.log('Revenues', res);
 				obj.setState({ amount : res.revenue});
@@ -189,7 +198,8 @@ class Followers extends React.Component {
 		if(!SEFB.fb_auth.db_id) return;
 		const obj = this;
 		$.ajax({
-			url	: SEFB.api_url + `followers?user_id=` + SEFB.fb_auth.db_id,
+			url		: SEFB.api_url + `followers`,
+			headers	: SEFB.headers(),
 			success	: (res) => {
 				// console.log('Followers', res);
 				obj.setState({ followers : res.followers});
@@ -219,7 +229,8 @@ class Sales extends React.Component {
 		if(!SEFB.fb_auth.db_id) return;
 		const obj = this;
 		$.ajax({
-			url	: SEFB.api_url + `sales?user_id=` + SEFB.fb_auth.db_id,
+			url			: SEFB.api_url + `sales`,
+			headers		: SEFB.headers(),
 			success	: (res) => {
 				// console.log('Sales', res);
 				obj.setState({ items : res.items});
@@ -262,18 +273,18 @@ class Events extends React.Component {
 		if(!SEFB.fb_auth.db_id) return;
 		const obj = this;
 		$.ajax({
-			url	: SEFB.api_url + `events?user_id=` + SEFB.fb_auth.db_id + `&after=` + obj.state.latest,
+			url		: SEFB.api_url + `events?after=` + obj.state.latest,
+			headers	: SEFB.headers(),
 			success	: (res) => {
 				// console.log('Newer Updates', obj.state.latest, res.updates);
 				// obj.setState({ events : res.updates});				
 				if(res.updates) {
 					let current = obj.state.events;
-					// console.log('Merge', current[0].time, res.updates[0].time);
 					current = res.updates.concat(current);
 					let d = null;
 					obj.setState(d = {
 						events : current,
-						latest : current[0].time
+						latest : current[0].created_at
 					});
 				}
 				setTimeout(() => {
@@ -289,17 +300,17 @@ class Events extends React.Component {
 		this.setState({ loading_older : true });
 		// console.log('Getting Older than', this.state.oldest);
 		$.ajax({
-			url	: SEFB.api_url + `events?user_id=` + SEFB.fb_auth.db_id + `&before=` + this.state.oldest,
+			url		: SEFB.api_url + `events?before=` + this.state.oldest,
+			headers	: SEFB.headers(),
 			success	: (res) => {
 				if(res.updates) {
 					let current = obj.state.events;
-					// console.log('Merge', current[0].time, res.updates[0].time);
 					current = current.concat(res.updates);
 					let d = null;
 					obj.setState(d = {
 						events : current,
 						loading_older : false,
-						oldest : current[current.length- 1].time
+						oldest : current[current.length- 1].created_at
 					});
 					// console.log('Show More Events', d);
 				}
@@ -312,7 +323,8 @@ class Events extends React.Component {
 	componentDidMount() {
 		const obj = this;
 		$.ajax({
-			url	: SEFB.api_url + `events?user_id=` + SEFB.fb_auth.db_id,
+			url		: SEFB.api_url + `events`,
+			headers	: SEFB.headers(),
 			success	: (res) => {
 				// console.log('Events', res);
 				if(!res.updates.length) {
@@ -328,8 +340,8 @@ class Events extends React.Component {
 				let d = null;
 				obj.setState(d = { 
 					events : res.updates,
-					latest : res.updates[0].time,
-					oldest : res.updates[res.updates.length - 1].time
+					latest : res.updates[0].created_at,
+					oldest : res.updates[res.updates.length - 1].created_at
 				});
 				// console.log('Loaded Events', d);
 				setTimeout(() => {
@@ -357,8 +369,8 @@ class Events extends React.Component {
 		if(Object.keys(events).length) {
 			text = [];
 			for(let n in events) {
-				events[n].key = events[n].table + ':' + events[n].table_id;
 				// console.log('Add Event', events[n]);
+				events[n].key = events[n].table + ':' + events[n].id;
 				text.push(React.createElement(EventLine, events[n]));
 			}
 		}
@@ -370,11 +382,13 @@ class EventLine extends React.Component {
 	constructor(props) {
 		super(props);
 		// console.log('Event Line', props);
+
 		this.state = {
-			table_id : props.table_id,
-			time	 : props.time,
+			table_id : props.id,
+			name	 : props.name,
+			time	 : props.created_at,
 			table	 : props.table,
-			message	 : props.message,
+			event	 : props,
 			read	 : props.read
 		};
 	}
@@ -382,11 +396,11 @@ class EventLine extends React.Component {
 		if(!SEFB.fb_auth.db_id) return;
 		const data = {
 			table_id : obj.state.table_id,
-			table	 : obj.state.table,
-			user_id	 : SEFB.fb_auth.db_id
+			table	 : obj.state.table
 		};
 		$.ajax({
 			url		: SEFB.api_url + `flags`,
+			headers	: SEFB.headers(),
 			type	: 'post',
 			data 	: data,
 			success	: (res) => {
@@ -394,13 +408,28 @@ class EventLine extends React.Component {
 			}
 		});
 	}
+	generateMessage() {
+		const state = this.state;
+		switch(state.table) {
+			case 'followers':
+				return state.name + ' started following you';
+			case 'subscribers':
+				return state.name + ' subscribed for Tier ' + state.event.tier;
+			case 'donations':
+				return state.name + ' donated ' + state.event.currency + ' ' + Maho.number(state.event.amount, 2);
+			case 'merch_sales':
+				return state.name + ' bought ' + Maho.number(state.event.amount) + ' ' + state.event.item_name;
+			default:
+				return state.name + ' ' + state.table;
+		}
+	}
 	render() {
 		let className = '';
 		const obj = this;
 		if(this.state.read) className = 'event-read';
 		return React.createElement('div', { className : className, onClick : () => { obj.click(obj) }, key : this.state.table + ':' + this.state.table_id }, [
-			this.state.message,
-			React.createElement('span', { key : 'time' }, this.state.time)
+			this.generateMessage(),
+			React.createElement('span', { key : 'time' }, new Date(this.state.time).toLocaleString())
 		]);
 	}
 }
@@ -412,11 +441,11 @@ class DebugLogin extends React.Component {
 	}
 	handleClick() {
 		if(!Object.keys(SEFB.fb_auth).length) SEFB.fb_auth = {
-			userID 	: 3,
-			name	: 'User 3',
-			db_id	: 0
+			userID	 		: '123',
+			name	 		: 'Allan',
+			access_token 	: 'sample'
 		}
-		console.log('Debug Log In', SEFB.fb_auth.userID);
+		console.log('Debug Log In', SEFB.fb_auth);
 		SEFB.login();
 	}
 	render() {

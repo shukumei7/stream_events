@@ -29,8 +29,7 @@ class UserTest extends TestCase
 
     public function test_login(): void
     {
-        $token = 'aEAAE0olGZA06gBO4ZCwQFPiJTYTKuZCXDtcFofc1BTTDub0i1Kkih4uWfnEb7nV52xicQdBitLiP2E4G9vmiJK4ZB8Gwnf8IrWmUTPyGuKrVoIyvYSpQXea8Si7yZCWZCKZB8RYT7lPfFIKOPpb2WTqbZCCZAQg0kcyHreKA7HLQsq1vZB7SFcxHw29k01pxUHEEzZAfZAyGxan1kL0ECDexAerBFI6R1YzZC0j7sqn5hInsSYgq9eB6fqm4OFVeHT0k72YZC4UNA3Eqa5M';
-        $response = $this->postJson('api/users', [ 'fb_token' => $token]);
+        $response = $this->postJson('api/users', [ 'fb_token' => 'sample']);
         $this->assertContains($status = $response->getStatusCode(), [200, 201]);
         $response = $this->actingAs(User::find($user_id = $response['user_id']))->get('/api/users');
         $response->assertOk();

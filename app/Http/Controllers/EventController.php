@@ -33,6 +33,14 @@ class EventController extends Controller
 
         $updates = array_slice($updates, 0, PAGE_SIZE);
 
+        foreach($updates as &$update) {
+            if(isset($update['tier'])) $update['table'] = 'subscribers';
+            else if(isset($update['item_name'])) $update['table'] = 'merch_sales';
+            else if(isset($update['currency'])) $update['table'] = 'donations';
+            else $update['table'] = 'followers';
+            $update['read'] = !empty($user->flags()->where('table', $update['table'])->where('table_id', $update['id'])->first());
+        }
+
         return response()->json([ 'updates' => array_values($updates)], 200);
     }
 
